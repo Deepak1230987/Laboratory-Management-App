@@ -18,7 +18,7 @@ app.use(helmet());
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Higher limit for development
+    max: process.env.NODE_ENV === 'production' ? 500 : 1000, // Higher limit for development
     skip: (req) => {
         // Skip rate limiting for OPTIONS requests (CORS preflight)
         return req.method === 'OPTIONS';
@@ -27,13 +27,23 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // CORS configuration
+const defaultAllowed = [
+    'https://laboratory-management-app.vercel.app',
+    'https://laboratory-management-app.onrender.com',
+    'http://localhost:3000',
+    'http://localhost:5173'
+];
+const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS && process.env.CORS_ALLOWED_ORIGINS.split(',').map(s => s.trim())) || defaultAllowed;
+
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production'
-        ? ['https://laboratory-management-app.vercel.app']
-        : ['http://localhost:3000', 'http://localhost:5173'],
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true); // allow non-browser or same-origin requests like curl/Postman
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error('CORS policy: Origin not allowed'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
     preflightContinue: false,
     optionsSuccessStatus: 200
 }));

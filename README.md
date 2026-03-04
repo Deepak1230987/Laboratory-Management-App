@@ -123,10 +123,10 @@ graph TD
         Uploads["/uploads — Instrument Images"]
     end
 
-    style CLIENT fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
-    style API fill:#fef3c7,stroke:#f59e0b,stroke-width:2px
-    style DB fill:#d1fae5,stroke:#10b981,stroke-width:2px
-    style Storage fill:#f3e8ff,stroke:#8b5cf6,stroke-width:2px
+    style CLIENT fill:#2563eb,stroke:#1e40af,stroke-width:2px,color:#fff
+    style API fill:#d97706,stroke:#92400e,stroke-width:2px,color:#fff
+    style DB fill:#059669,stroke:#065f46,stroke-width:2px,color:#fff
+    style Storage fill:#7c3aed,stroke:#5b21b6,stroke-width:2px,color:#fff
 ```
 
 ### Request Lifecycle
@@ -143,16 +143,16 @@ graph LR
     H --> I["🔄 Mongoose\nODM"]
     I --> J[("🗄️ MongoDB")]
 
-    style A fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
-    style B fill:#fecaca,stroke:#ef4444,stroke-width:2px
-    style C fill:#fed7aa,stroke:#f97316,stroke-width:2px
-    style D fill:#fef3c7,stroke:#f59e0b,stroke-width:2px
-    style E fill:#d1fae5,stroke:#10b981,stroke-width:2px
-    style F fill:#e0e7ff,stroke:#6366f1,stroke-width:2px
-    style G fill:#f3e8ff,stroke:#8b5cf6,stroke-width:2px
-    style H fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
-    style I fill:#d1fae5,stroke:#10b981,stroke-width:2px
-    style J fill:#d1fae5,stroke:#10b981,stroke-width:2px
+    style A fill:#2563eb,stroke:#1e40af,stroke-width:2px,color:#fff
+    style B fill:#dc2626,stroke:#991b1b,stroke-width:2px,color:#fff
+    style C fill:#ea580c,stroke:#9a3412,stroke-width:2px,color:#fff
+    style D fill:#d97706,stroke:#92400e,stroke-width:2px,color:#fff
+    style E fill:#059669,stroke:#065f46,stroke-width:2px,color:#fff
+    style F fill:#4f46e5,stroke:#3730a3,stroke-width:2px,color:#fff
+    style G fill:#7c3aed,stroke:#5b21b6,stroke-width:2px,color:#fff
+    style H fill:#2563eb,stroke:#1e40af,stroke-width:2px,color:#fff
+    style I fill:#059669,stroke:#065f46,stroke-width:2px,color:#fff
+    style J fill:#059669,stroke:#065f46,stroke-width:2px,color:#fff
 ```
 
 ---
@@ -469,7 +469,7 @@ sequenceDiagram
     participant S as ⚙️ Server
     participant DB as 🗄️ MongoDB
 
-    rect rgb(219, 234, 254)
+    rect rgb(30, 64, 175)
         Note over C,DB: Authentication Flow
         C->>S: POST /api/auth/login {email, password}
         S->>DB: Find user by email
@@ -480,7 +480,7 @@ sequenceDiagram
         C->>C: Store token in localStorage
     end
 
-    rect rgb(209, 250, 229)
+    rect rgb(6, 95, 70)
         Note over C,DB: Authenticated Request
         C->>S: GET /api/instruments (Bearer token)
         S->>S: jwt.verify(token)

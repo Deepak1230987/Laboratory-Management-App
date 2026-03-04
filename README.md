@@ -92,70 +92,67 @@ This platform digitizes the entire laboratory instrument lifecycle — from cata
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CLIENT (Browser)                         │
-│   React 19 · TypeScript · Vite 7 · Tailwind CSS v4 · shadcn/ui │
-├─────────────────────────────────────────────────────────────────┤
-│                         HTTPS / REST                            │
-├─────────────────────────────────────────────────────────────────┤
-│                      API SERVER (Backend)                        │
-│        Express.js · JWT Auth · Helmet · Rate Limiting           │
-│  ┌──────────┐  ┌─────────────┐  ┌────────────┐  ┌───────────┐  │
-│  │ Auth API │  │Instruments  │  │ Usage API  │  │ Users API │  │
-│  │ /api/auth│  │/api/instrmts│  │ /api/usage │  │/api/users │  │
-│  └──────────┘  └─────────────┘  └────────────┘  └───────────┘  │
-├─────────────────────────────────────────────────────────────────┤
-│                     DATA LAYER (MongoDB)                         │
-│  ┌──────────┐  ┌─────────────┐  ┌──────────────────────────┐   │
-│  │  Users   │  │ Instruments │  │     Usage History        │   │
-│  └──────────┘  └─────────────┘  └──────────────────────────┘   │
-├─────────────────────────────────────────────────────────────────┤
-│                     FILE STORAGE (Disk)                          │
-│                 /uploads — Instrument images                    │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph CLIENT["🖥️ Client - Browser"]
+        React["React 19 · TypeScript"]
+        Vite["Vite 7 · Tailwind CSS v4"]
+        ShadCN["shadcn/ui Components"]
+    end
+
+    CLIENT <-->|HTTPS / REST| API
+
+    subgraph API["⚙️ API Server - Express.js"]
+        Auth["/api/auth"]
+        Instruments["/api/instruments"]
+        Usage["/api/usage"]
+        Users["/api/users"]
+    end
+
+    API <--> DB
+
+    subgraph DB["🗄️ Data Layer - MongoDB"]
+        UsersCol[(Users)]
+        InstrumentsCol[(Instruments)]
+        HistoryCol[(Usage History)]
+    end
+
+    API --> Storage
+
+    subgraph Storage["📁 File Storage"]
+        Uploads["/uploads — Instrument Images"]
+    end
+
+    style CLIENT fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
+    style API fill:#fef3c7,stroke:#f59e0b,stroke-width:2px
+    style DB fill:#d1fae5,stroke:#10b981,stroke-width:2px
+    style Storage fill:#f3e8ff,stroke:#8b5cf6,stroke-width:2px
 ```
 
 ### Request Lifecycle
 
-```
-Client Request
-    │
-    ▼
-┌──────────┐    ┌───────────┐    ┌──────────────┐    ┌──────────┐
-│  Helmet  │───▶│Rate Limit │───▶│  CORS Check  │───▶│  Router  │
-│(Security)│    │(Throttle) │    │  (Origins)   │    │(Dispatch)│
-└──────────┘    └───────────┘    └──────────────┘    └──────────┘
-                                                          │
-                                                          ▼
-                                                    ┌──────────┐
-                                                    │   JWT    │
-                                                    │  Auth    │
-                                                    │Middleware│
-                                                    └──────────┘
-                                                          │
-                                                          ▼
-                                                    ┌──────────┐
-                                                    │ Request  │
-                                                    │ Validator│
-                                                    └──────────┘
-                                                          │
-                                                          ▼
-                                                    ┌──────────┐
-                                                    │ Route    │
-                                                    │ Handler  │
-                                                    └──────────┘
-                                                          │
-                                                          ▼
-                                                    ┌──────────┐
-                                                    │ Mongoose │
-                                                    │   ODM    │
-                                                    └──────────┘
-                                                          │
-                                                          ▼
-                                                    ┌──────────┐
-                                                    │ MongoDB  │
-                                                    └──────────┘
+```mermaid
+graph LR
+    A["🌐 Client Request"] --> B["🛡️ Helmet\n(Security Headers)"]
+    B --> C["⏱️ Rate Limiter\n(Throttle)"]
+    C --> D["🔗 CORS Check\n(Origin Validation)"]
+    D --> E["📍 Router\n(Dispatch)"]
+    E --> F["🔑 JWT Auth\nMiddleware"]
+    F --> G["✅ Request\nValidator"]
+    G --> H["📦 Route\nHandler"]
+    H --> I["🔄 Mongoose\nODM"]
+    I --> J[("🗄️ MongoDB")]
+
+    style A fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
+    style B fill:#fecaca,stroke:#ef4444,stroke-width:2px
+    style C fill:#fed7aa,stroke:#f97316,stroke-width:2px
+    style D fill:#fef3c7,stroke:#f59e0b,stroke-width:2px
+    style E fill:#d1fae5,stroke:#10b981,stroke-width:2px
+    style F fill:#e0e7ff,stroke:#6366f1,stroke-width:2px
+    style G fill:#f3e8ff,stroke:#8b5cf6,stroke-width:2px
+    style H fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
+    style I fill:#d1fae5,stroke:#10b981,stroke-width:2px
+    style J fill:#d1fae5,stroke:#10b981,stroke-width:2px
 ```
 
 ---
@@ -346,27 +343,58 @@ All endpoints are prefixed with `/api`. Protected routes require a valid JWT tok
 
 ### Entity Relationship
 
-```
-┌──────────────┐       ┌──────────────────┐       ┌──────────────┐
-│    Users     │       │  Usage History    │       │  Instruments │
-├──────────────┤       ├──────────────────┤       ├──────────────┤
-│ _id          │◄──┐   │ _id              │   ┌──▶│ _id          │
-│ name         │   ├───│ user (ref)       │   │   │ name         │
-│ email        │   │   │ instrument (ref) │───┘   │ description  │
-│ password     │   │   │ startTime        │       │ image        │
-│ role         │   │   │ endTime          │       │ quantity     │
-│ isActive     │   │   │ duration         │       │ available    │
-│ currentlyUsing│  │   │ quantity         │       │ Qty          │
-│ createdAt    │   │   │ status           │       │ manualGuide  │
-│ updatedAt    │   │   │ notes            │       │ status       │
-└──────────────┘   │   │ terminatedBy(ref)│───┘   │ specs (Map)  │
-                   │   │ terminationReason│       │ category     │
-                   │   │ createdAt        │       │ location     │
-                   │   └──────────────────┘       │ currentUsers │
-                   │                               │ totalUsageTime│
-                   │                               │ usageCount   │
-                   └───────────────────────────────│ createdAt    │
-                                                   └──────────────┘
+```mermaid
+erDiagram
+    USERS ||--o{ USAGE_HISTORY : "creates"
+    INSTRUMENTS ||--o{ USAGE_HISTORY : "tracked in"
+    USERS ||--o{ USAGE_HISTORY : "terminates (admin)"
+
+    USERS {
+        ObjectId _id PK
+        String name
+        String email UK
+        String password "hashed"
+        String role "admin | user"
+        Boolean isActive
+        Array currentlyUsing
+        Date createdAt
+        Date updatedAt
+    }
+
+    INSTRUMENTS {
+        ObjectId _id PK
+        String name
+        String description
+        String image "file path"
+        Number quantity
+        Number availableQuantity
+        String manualGuide
+        String status "available | unavailable | maintenance"
+        Map specifications "key-value pairs"
+        String category
+        String location
+        Array currentUsers
+        Number totalUsageTime "minutes"
+        Number usageCount
+        Date createdAt
+        Date updatedAt
+    }
+
+    USAGE_HISTORY {
+        ObjectId _id PK
+        ObjectId user FK
+        ObjectId instrument FK
+        Date startTime
+        Date endTime
+        Number duration "minutes"
+        Number quantity
+        String status "active | completed | terminated"
+        String notes
+        ObjectId terminatedBy FK
+        String terminationReason
+        Date createdAt
+        Date updatedAt
+    }
 ```
 
 ### User Model
@@ -435,35 +463,32 @@ All endpoints are prefixed with `/api`. Protected routes require a valid JWT tok
 
 ### JWT Token Flow
 
-```
-┌────────┐                          ┌────────┐                    ┌────────┐
-│ Client │                          │ Server │                    │MongoDB │
-└───┬────┘                          └───┬────┘                    └───┬────┘
-    │  POST /api/auth/login             │                             │
-    │  { email, password }              │                             │
-    │──────────────────────────────────▶│                             │
-    │                                   │  Find user by email         │
-    │                                   │────────────────────────────▶│
-    │                                   │  Return user document       │
-    │                                   │◀────────────────────────────│
-    │                                   │                             │
-    │                                   │  bcrypt.compare(password)   │
-    │                                   │  jwt.sign({ id, role })     │
-    │                                   │                             │
-    │  200 OK                           │                             │
-    │  { token, user }                  │                             │
-    │◀──────────────────────────────────│                             │
-    │                                   │                             │
-    │  Stores token in localStorage     │                             │
-    │                                   │                             │
-    │  GET /api/instruments             │                             │
-    │  Authorization: Bearer <token>    │                             │
-    │──────────────────────────────────▶│                             │
-    │                                   │  jwt.verify(token)          │
-    │                                   │  Attach user to req         │
-    │                                   │────────────────────────────▶│
-    │  200 OK { instruments[] }         │                             │
-    │◀──────────────────────────────────│◀────────────────────────────│
+```mermaid
+sequenceDiagram
+    participant C as 🖥️ Client
+    participant S as ⚙️ Server
+    participant DB as 🗄️ MongoDB
+
+    rect rgb(219, 234, 254)
+        Note over C,DB: Authentication Flow
+        C->>S: POST /api/auth/login {email, password}
+        S->>DB: Find user by email
+        DB-->>S: Return user document
+        S->>S: bcrypt.compare(password)
+        S->>S: jwt.sign({ id, role })
+        S-->>C: 200 OK { token, user }
+        C->>C: Store token in localStorage
+    end
+
+    rect rgb(209, 250, 229)
+        Note over C,DB: Authenticated Request
+        C->>S: GET /api/instruments (Bearer token)
+        S->>S: jwt.verify(token)
+        S->>S: Attach user to req
+        S->>DB: Query instruments
+        DB-->>S: Return documents
+        S-->>C: 200 OK { instruments[] }
+    end
 ```
 
 ### Role-Based Access Control
